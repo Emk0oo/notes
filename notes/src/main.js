@@ -8,7 +8,6 @@ async function checkId() {
       id = fichier.id;
     }
   });
-  console.log(id);
 }
 
 function creerNote() {
@@ -22,7 +21,7 @@ function creerNote() {
       <h1 class="font-bold text-lg">${titre}</h1>
       <p display="none">${id}</p>
       <p>${contenu}</p>
-      <button onclick="supprimerNote(this)">Supprimer</button>
+      <button onclick="supprimerNote(${id})">Supprimer</button>
       <button onclick="editer(${id})">Editer</button>
   `;
   document.getElementById("savedNotes").appendChild(note);
@@ -55,8 +54,6 @@ async function editer(id) {
   }
 }
 
-
-
 async function insererFichierLocal(id, titre, contenu) {
   const note = {
     id: id,
@@ -77,14 +74,13 @@ async function insererFichierLocal(id, titre, contenu) {
 async function recupererFichiersLocaux() {
   try {
     const fichiers = await invoke("get_notes");
-    console.log(fichiers);
     fichiers.forEach((fichier) => {
       const note = document.createElement("div");
       note.classList.add("bg-white", "p-4", "rounded-lg", "note");
       note.innerHTML = `
           <h1 class="font-bold text-lg">${fichier.titre}</h1>
           <p>${fichier.contenu}</p>
-          <button onclick="supprimerNote(this)">Supprimer</button>
+          <button onclick="supprimerNote(${fichier.id})">Supprimer</button>
           <button onclick="editer(${fichier.id})">Editer</button>
 
       `;
@@ -102,16 +98,51 @@ async function recupererFichiersLocaux() {
 })();
 
 async function supprimerNote(id) {
-  let notes = await invoke("get_notes");
-  console.log(notes);
-  notes.forEach((fichier) => {
-    if (fichier.id == id) {
-      console.log(fichier);
-      notes.splice(notes.indexOf(fichier), 1);
+  try {
+    console.log(id)
+
+    await invoke("delete_note", { id: parseInt(id) });
+    console.log("Note supprimée avec succès");
+
+    // Suppression de la div de la note du DOM, ajustez selon votre implémentation spécifique
+    const noteElement = document.querySelector(`#note-${id}`);
+    if (noteElement) {
+      noteElement.remove();
     }
-    console.log(notes);
-  });
-  
-  
-  id.parentNode.remove(); // Cela supprime la div de la note entière
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la note:", error);
+  }
 }
+
+// async function supprimerNote(id, buttonElement) {
+//   console.log("ID reçu pour suppression:", id); // Vérifiez ce qui est effectivement reçu
+
+//   // Convertir id en nombre
+//   const numericId = Number(id);
+//   console.log("ID numérique pour suppression:", numericId, typeof numericId);
+
+//   if (isNaN(numericId)) {
+//     console.error("L'ID fourni n'est pas un nombre valide:", id);
+//     return; // Arrêter l'exécution si l'ID n'est pas valide
+//   }
+
+//   let notes = await invoke("get_notes");
+//   console.log("Notes avant suppression:", notes);
+
+//   // Filtrer pour enlever la note avec l'ID numérique correspondant
+//   const filteredNotes = notes.filter(fichier => fichier.id !== numericId);
+//   console.log("Notes après suppression:", filteredNotes);
+
+//   // Mettre à jour les notes sur le serveur ou en local
+//   try {
+//     await invoke("edit", { notes: filteredNotes });
+//     console.log("Notes mises à jour après suppression");
+//   } catch (error) {
+//     console.error("Erreur lors de la mise à jour des notes:", error);
+//   }
+
+//   // Suppression de la div de la note du DOM
+//   if (buttonElement && buttonElement.parentNode) {
+//     buttonElement.parentNode.remove();
+//   }
+// }

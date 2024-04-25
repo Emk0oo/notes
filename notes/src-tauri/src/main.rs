@@ -51,6 +51,23 @@ fn edit(notes: Vec<Note>) {
     file.write_all(notes_json.as_bytes()).expect("L'écriture dans le fichier a échoué");
 }
 
+#[tauri::command]
+fn delete_note(id: i32) {
+    let mut previous_notes = read_notes().unwrap_or_else(|err| {
+        eprintln!("Erreur lors de la lecture des notes: {}", err);
+        Vec::new()
+    });
+
+    previous_notes.retain(|note| note.id != id);
+
+    let mut file = File::create("notes.json").expect("La création du fichier a échoué");
+    let notes_json = serde_json::to_string(&previous_notes).expect("La sérialisation JSON a échoué");
+    file.write_all(notes_json.as_bytes())
+        .expect("L'écriture dans le fichier a échoué");
+    
+}
+    
+
 
 
 #[tauri::command]
@@ -60,7 +77,7 @@ fn greet(name: &str) -> String {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, save_note, get_notes,edit])
+        .invoke_handler(tauri::generate_handler![greet, save_note, get_notes,edit, delete_note])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
