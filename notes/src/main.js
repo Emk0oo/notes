@@ -1,22 +1,40 @@
 const { invoke } = window.__TAURI__.tauri;
+let id = 0;
+
+async function checkId() {
+  let tab= await invoke("get_notes");
+  tab.forEach((fichier) => {
+    if(fichier.id>id){
+      id=fichier.id;
+    }
+  });
+  console.log(id);
+}
+
 
 function creerNote() {
   const titre = document.getElementById("titre").value;
   const contenu = document.getElementById("contenu").value;
+  id++; // Incrémentez l'ID pour chaque nouvelle note
+  
 
   const note = document.createElement("div");
   note.classList.add("bg-white", "p-4", "rounded-lg", "note"); // J'ai ajouté 'note' à la classe pour que la fonction supprimerNote fonctionne correctement
   note.innerHTML = `
       <h1 class="font-bold text-lg">${titre}</h1>
+      <p display="none">${id}</p>
       <p>${contenu}</p>
       <button onclick="supprimerNote(this)">Supprimer</button>
   `;
   document.getElementById("savedNotes").appendChild(note);
-  insererFichierLocal(titre, contenu); // Passez les valeurs directement à la fonction suivante
+  insererFichierLocal(id, titre, contenu); // Passez les valeurs directement à la fonction suivante
 }
 
-async function insererFichierLocal(titre, contenu) {
+async function insererFichierLocal(id, titre, contenu) {
+
+  
   const note = {
+    id: id,
     titre: titre,
     contenu: contenu,
   };
@@ -54,6 +72,7 @@ async function recupererFichiersLocaux() {
 
 // Encapsulation dans une fonction asynchrone auto-invoquée
 (async function init() {
+  await checkId();
   await recupererFichiersLocaux();
 })();
 

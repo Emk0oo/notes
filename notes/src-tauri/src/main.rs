@@ -7,6 +7,7 @@ use serde_json;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
+    id: i32,
     titre: String,
     contenu: String,
 }
