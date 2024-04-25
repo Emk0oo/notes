@@ -43,6 +43,15 @@ fn get_notes() -> Vec<Note> {
     })
 }
 
+//editer toutes les notes
+#[tauri::command]
+fn edit(notes: Vec<Note>) {
+    let mut file = File::create("notes.json").expect("La création du fichier a échoué");
+    let notes_json = serde_json::to_string(&notes).expect("La sérialisation JSON a échoué");
+    file.write_all(notes_json.as_bytes()).expect("L'écriture dans le fichier a échoué");
+}
+
+
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -51,7 +60,7 @@ fn greet(name: &str) -> String {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, save_note, get_notes])
+        .invoke_handler(tauri::generate_handler![greet, save_note, get_notes,edit])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
