@@ -1,9 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{self, Read, Write}; // Ajout de `Read` et `io` pour résoudre les erreurs
-use serde_json;
+use tauri::command;
 
 #[derive(Serialize, Deserialize)]
 struct Note {
@@ -12,72 +12,83 @@ struct Note {
     contenu: String,
 }
 
-#[tauri::command]
+fn init_db() -> Result<Connection> {
+    let conn = Connection::open("notes.db")?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY,
+            titre TEXT NOT NULL,
+            contenu TEXT NOT NULL
+        )",
+        [],
+    )?;
+    Ok(conn)
+}
+
+#[command]
 fn save_note(note: Note) {
-    let mut previous_notes = read_notes().unwrap_or_else(|err| {
-        eprintln!("Erreur lors de la lecture des notes: {}", err);
-        Vec::new() // Si une erreur se produit lors de la lecture des notes, créer une nouvelle liste vide
-    });
-
-    previous_notes.push(note);
-
-    let mut file = File::create("notes.json").expect("La création du fichier a échoué");
-    let notes_json = serde_json::to_string(&previous_notes).expect("La sérialisation JSON a échoué");
-    file.write_all(notes_json.as_bytes())
-        .expect("L'écriture dans le fichier a échoué");
+    let conn = init_db().expect("Failed to initialize database");
+    conn.execute(
+        "INSERT INTO notes (titre, contenu) VALUES (?1, ?2)",
+        params![note.titre, note.contenu],
+    )
+    .expect("Failed to save note");
 }
 
-fn read_notes() -> Result<Vec<Note>, io::Error> {
-    let mut file = File::open("notes.json")?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?; // Cette méthode est maintenant disponible avec `std::io::Read`
-    let notes: Vec<Note> = serde_json::from_str(&contents)?;
-    Ok(notes)
-}
-
-#[tauri::command]
+#[command]
 fn get_notes() -> Vec<Note> {
-    read_notes().unwrap_or_else(|err| {
-        eprintln!("Erreur lors de la lecture des notes: {}", err);
-        Vec::new()
-    })
+    let conn = init_db().expect("Failed to initialize database");
+    let mut stmt = conn
+        .prepare("SELECT id, titre, contenu FROM notes")
+        .expect("Failed to prepare statement");
+    let notes_iter = stmt
+        .query_map([], |row| {
+            Ok(Note {
+                id: row.get(0)?,
+                titre: row.get(1)?,
+                contenu: row.get(2)?,
+            })
+        })
+        .expect("Failed to query notes");
+
+    notes_iter
+        .map(|note| note.expect("Failed to read note"))
+        .collect()
 }
 
-//editer toutes les notes
-#[tauri::command]
+#[command]
 fn edit(notes: Vec<Note>) {
-    let mut file = File::create("notes.json").expect("La création du fichier a échoué");
-    let notes_json = serde_json::to_string(&notes).expect("La sérialisation JSON a échoué");
-    file.write_all(notes_json.as_bytes()).expect("L'écriture dans le fichier a échoué");
+    let conn = init_db().expect("Failed to initialize database");
+    for note in notes {
+        conn.execute(
+            "UPDATE notes SET titre = ?1, contenu = ?2 WHERE id = ?3",
+            params![note.titre, note.contenu, note.id],
+        )
+        .expect("Failed to update note");
+    }
 }
 
-#[tauri::command]
+#[command]
 fn delete_note(id: i32) {
-    let mut previous_notes = read_notes().unwrap_or_else(|err| {
-        eprintln!("Erreur lors de la lecture des notes: {}", err);
-        Vec::new()
-    });
-
-    previous_notes.retain(|note| note.id != id);
-
-    let mut file = File::create("notes.json").expect("La création du fichier a échoué");
-    let notes_json = serde_json::to_string(&previous_notes).expect("La sérialisation JSON a échoué");
-    file.write_all(notes_json.as_bytes())
-        .expect("L'écriture dans le fichier a échoué");
-    
+    let conn = init_db().expect("Failed to initialize database");
+    conn.execute("DELETE FROM notes WHERE id = ?1", params![id])
+        .expect("Failed to delete note");
 }
-    
 
-
-
-#[tauri::command]
+#[command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, save_note, get_notes,edit, delete_note])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            save_note,
+            get_notes,
+            edit,
+            delete_note
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
