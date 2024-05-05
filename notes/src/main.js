@@ -1,8 +1,10 @@
 const { invoke } = window.__TAURI__.tauri;
 let id = 0;
+let editingNoteId = null; // Keeps track of the note being edited
 
+// Check the highest existing note ID
 async function checkId() {
-  let tab = await invoke("get_notes");
+  const tab = await invoke("get_notes");
   tab.forEach((fichier) => {
     if (fichier.id > id) {
       id = fichier.id;
@@ -10,80 +12,88 @@ async function checkId() {
   });
 }
 
+// Create a new note
 function creerNote() {
   const titre = document.getElementById("titre").value;
   const contenu = document.getElementById("contenu").value;
-  id++; // Incrémentez l'ID pour chaque nouvelle note
+  id++;
 
-  const note = document.createElement("div");
-  note.classList.add("bg-white", "p-4", "rounded-lg", "note"); // J'ai ajouté 'note' à la classe pour que la fonction supprimerNote fonctionne correctement
-  note.innerHTML = `
-      <h1 class="font-bold text-lg">${titre}</h1>
-      <p display="none">${id}</p>
-      <p>${contenu}</p>
-      <button onclick="supprimerNote(${id})">Supprimer</button>
-      <button onclick="editer(${id})">Editer</button>
-  `;
-  document.getElementById("savedNotes").appendChild(note);
-  insererFichierLocal(id, titre, contenu); // Passez les valeurs directement à la fonction suivante
+  const noteElement = createNoteElement(id, titre, contenu);
+  document.getElementById("savedNotes").appendChild(noteElement);
+
+  insererFichierLocal(id, titre, contenu);
 }
 
-async function editer(id) {
-  let notes = await invoke("get_notes");
-  let found = false;
-  notes.forEach((fichier) => {
-    if (fichier.id == id) {
-      fichier.titre = document.getElementById("titre").value;
-      fichier.contenu = document.getElementById("contenu").value;
-      found = true;
-      console.log(fichier);
+// Helper function to create note elements
+function createNoteElement(id, titre, contenu) {
+  const note = document.createElement("div");
+  note.id = `note-${id}`;
+  note.classList.add("bg-white", "p-4", "rounded-lg", "note");
+  note.innerHTML = `
+    <h1 class="font-bold text-lg">${titre}</h1>
+    <p>${contenu}</p>
+    <button onclick="supprimerNote(${id})">Supprimer</button>
+    <button onclick="preEdit(${id}, '${titre}', '${contenu}')">Editer</button>
+  `;
+  return note;
+}
+
+// Prepare for editing a specific note
+function preEdit(id, titre, contenu) {
+  editingNoteId = id;
+  document.getElementById("editTitre").value = titre;
+  document.getElementById("editContenu").value = contenu;
+}
+
+// Save the edited note
+async function saveEdit() {
+  const newTitre = document.getElementById("editTitre").value;
+  const newContenu = document.getElementById("editContenu").value;
+
+  // Fetch the existing notes
+  const notes = await invoke("get_notes");
+
+  // Update the specific note with the new content
+  const updatedNotes = notes.map((note) => {
+    if (note.id === editingNoteId) {
+      return { ...note, titre: newTitre, contenu: newContenu };
     }
+    return note;
   });
 
-  if (!found) {
-    console.log("Aucune note trouvée avec cet ID");
-    return;
+  // Save the updated notes
+  await invoke("edit", { notes: updatedNotes });
+
+  // Update the content in the DOM
+  const noteElement = document.querySelector(`#note-${editingNoteId}`);
+  if (noteElement) {
+    noteElement.querySelector("h1").innerText = newTitre;
+    noteElement.querySelector("p").innerText = newContenu;
   }
 
-  console.log(notes);
-  try {
-    await invoke("edit", { notes }); // Assurez-vous d'envoyer un vecteur de notes
-    console.log("Note éditée et sauvegardée :", notes);
-  } catch (error) {
-    console.error("Erreur lors de l'invocation de edit:", error);
-  }
+  // Optionally clear the form fields after editing
+  document.getElementById("editTitre").value = "";
+  document.getElementById("editContenu").value = "";
+  editingNoteId = null;
 }
 
+// Insert a new note into the database
 async function insererFichierLocal(id, titre, contenu) {
-  const note = {
-    id: id,
-    titre: titre,
-    contenu: contenu,
-  };
-
-  console.log("Debug note object:", note); // Pour vérifier l'objet
+  const note = { id, titre, contenu };
 
   try {
-    const fichier = await invoke("save_note", { note }); // Assurez-vous que l'objet est bien passé en tant que 'note'
-    console.log(fichier);
+    await invoke("save_note", { note });
   } catch (error) {
     console.error("Erreur lors de l'invocation de save_note:", error);
   }
 }
 
+// Retrieve and display existing notes
 async function recupererFichiersLocaux() {
   try {
     const fichiers = await invoke("get_notes");
     fichiers.forEach((fichier) => {
-      const note = document.createElement("div");
-      note.classList.add("bg-white", "p-4", "rounded-lg", "note");
-      note.innerHTML = `
-          <h1 class="font-bold text-lg">${fichier.titre}</h1>
-          <p>${fichier.contenu}</p>
-          <button onclick="supprimerNote(${fichier.id})">Supprimer</button>
-          <button onclick="editer(${fichier.id})">Editer</button>
-
-      `;
+      const note = createNoteElement(fichier.id, fichier.titre, fichier.contenu);
       document.getElementById("savedNotes").appendChild(note);
     });
   } catch (error) {
@@ -91,20 +101,10 @@ async function recupererFichiersLocaux() {
   }
 }
 
-// Encapsulation dans une fonction asynchrone auto-invoquée
-(async function init() {
-  await checkId();
-  await recupererFichiersLocaux();
-})();
-
+// Delete a note
 async function supprimerNote(id) {
   try {
-    console.log(id)
-
     await invoke("delete_note", { id: parseInt(id) });
-    console.log("Note supprimée avec succès");
-
-    // Suppression de la div de la note du DOM, ajustez selon votre implémentation spécifique
     const noteElement = document.querySelector(`#note-${id}`);
     if (noteElement) {
       noteElement.remove();
@@ -114,35 +114,8 @@ async function supprimerNote(id) {
   }
 }
 
-// async function supprimerNote(id, buttonElement) {
-//   console.log("ID reçu pour suppression:", id); // Vérifiez ce qui est effectivement reçu
-
-//   // Convertir id en nombre
-//   const numericId = Number(id);
-//   console.log("ID numérique pour suppression:", numericId, typeof numericId);
-
-//   if (isNaN(numericId)) {
-//     console.error("L'ID fourni n'est pas un nombre valide:", id);
-//     return; // Arrêter l'exécution si l'ID n'est pas valide
-//   }
-
-//   let notes = await invoke("get_notes");
-//   console.log("Notes avant suppression:", notes);
-
-//   // Filtrer pour enlever la note avec l'ID numérique correspondant
-//   const filteredNotes = notes.filter(fichier => fichier.id !== numericId);
-//   console.log("Notes après suppression:", filteredNotes);
-
-//   // Mettre à jour les notes sur le serveur ou en local
-//   try {
-//     await invoke("edit", { notes: filteredNotes });
-//     console.log("Notes mises à jour après suppression");
-//   } catch (error) {
-//     console.error("Erreur lors de la mise à jour des notes:", error);
-//   }
-
-//   // Suppression de la div de la note du DOM
-//   if (buttonElement && buttonElement.parentNode) {
-//     buttonElement.parentNode.remove();
-//   }
-// }
+// Initialize by checking IDs and loading notes
+(async function init() {
+  await checkId();
+  await recupererFichiersLocaux();
+})();
