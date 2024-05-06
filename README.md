@@ -1,93 +1,61 @@
 # Tauri Notes App
 
-A note-taking application built using Tauri and Rust. This application allows you to create, edit, and delete notes while providing a simple and intuitive user interface.
+Une application de prise de notes développée avec Tauri et Rust. Cette application vous permet de créer, modifier et supprimer des notes tout en offrant une interface utilisateur simple et intuitive.
 
-## Features
+## Fonctionnalités
 
-- **Add New Notes:** Add new notes by providing a title and content.
-- **Edit Existing Notes:** Modify any existing note's title and content.
-- **Delete Notes:** Remove notes from the database.
-- **View All Notes:** Display all saved notes with their titles and contents.
+- **Ajouter de nouvelles notes :** Ajoutez de nouvelles notes en fournissant un titre et un contenu.
+- **Modifier les notes existantes :** Modifiez le titre et le contenu de n'importe quelle note existante.
+- **Supprimer des notes :** Supprimez les notes de la base de données.
+- **Afficher toutes les notes :** Affichez toutes les notes enregistrées avec leur titre et leur contenu.
 
-## Technologies Used
+## Technologies utilisées
 
-- **Tauri:** Cross-platform framework for building native desktop applications.
-- **Rust:** Modern systems programming language.
-- **Rusqlite:** SQLite database wrapper for Rust to handle persistent storage.
-- **HTML/CSS/JavaScript:** Frontend design and behavior for the user interface.
+- **Tauri :** Framework multiplateforme pour créer des applications de bureau natives.
+- **Rust :** Langage de programmation système moderne.
+- **Rusqlite :** Wrapper SQLite pour Rust, afin de gérer le stockage persistant.
+- **HTML/CSS/JavaScript :** Conception et comportement du frontend pour l'interface utilisateur.
 
-## Getting Started
+## Prise en main
 
-### Prerequisites
+### Prérequis
 
-- Rust programming language: [Install Rust](https://www.rust-lang.org/tools/install)
-- Tauri prerequisites: [Check Tauri Setup](https://tauri.app/v1/guides/getting-started/prerequisites)
+- Langage de programmation Rust : [Installer Rust](https://www.rust-lang.org/tools/install)
+- Prérequis pour Tauri : [Vérifier la configuration Tauri](https://tauri.app/v1/guides/getting-started/prerequisites)
 
 ### Installation
 
-1. Clone this repository.
-2. Install dependencies:
+1. Clonez ce dépôt.
+2. Installez les dépendances :
    ```bash
    cargo install tauri-cli
-3. Launch app:
+3. Lancer l'app :
    ```bash
    cd notes
    cargo tauri dev
 
-### Usage
+### Utilisation
 
-1. **Launch the application:** The main screen labeled "Notes" will open.
+1. **Lancez l'application :** L'écran principal intitulé "Notes" s'ouvrira.
 
-#### Adding a Note
+#### Ajouter une note
 
-1. Navigate to the "Ajouter une note" (Add Note) section.
-2. Enter a title in the "Titre" field and content in the "Contenu" field.
-3. Click the "Ajouter une note" button to save the note.
-4. The new note will appear in the "Mes notes enregistrées" section.
+1. Naviguez vers la section "Ajouter une note".
+2. Entrez un titre dans le champ "Titre" et un contenu dans le champ "Contenu".
+3. Cliquez sur le bouton "Ajouter une note" pour enregistrer la note.
+4. La nouvelle note apparaîtra dans la section "Mes notes enregistrées".
 
-#### Editing a Note
+#### Modifier une note
 
-1. Locate the note you wish to edit in the "Mes notes enregistrées" section.
-2. Click the "Editer" button next to that note.
-3. The note's title and content will appear in the "Editer la note" (Edit Note) section.
-4. Modify the title and content as desired.
-5. Click "Enregistrer" to save changes.
+1. Trouvez la note que vous souhaitez modifier dans la section "Mes notes enregistrées".
+2. Cliquez sur le bouton "Editer" à côté de cette note.
+3. Le titre et le contenu de la note apparaîtront dans la section "Editer la note".
+4. Modifiez le titre et le contenu comme souhaité.
+5. Cliquez sur "Enregistrer" pour sauvegarder les modifications.
 
-#### Deleting a Note
+#### Supprimer une note
 
-1. Locate the note you wish to delete in the "Mes notes enregistrées" section.
-2. Click the "Supprimer" button next to that note.
-3. The note will be permanently removed from the database.
-
-### Code Structure
-
-- **HTML/CSS/JavaScript:** Located in the `index.html` and `main.js` files for the user interface.
-- **Rust Backend:**
-  - `save_note` to insert a new note.
-  - `get_notes` to retrieve saved notes.
-  - `edit` to update notes.
-  - `delete_note` to remove notes.
-
-### Future Enhancements
-
-- **Search Feature:** Filter notes based on keywords.
-- **Rich Text Editor:** Add support for rich text formatting in note content.
-
-### Contributing
-
-1. Fork this repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit (`git commit -m 'Add feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Open a pull request.
-
-### License
-
-This project is licensed under the MIT License.
-
-### Hotkey Suggestions
-- **Z**: Save the README to a file and create a downloadable link.
-- **T**: Provide test cases for the app.
-- **E**: Expand on the app's technical architecture or database details.
-- **W**: Confirm if the README meets your requirements or request edits.
+1. Trouvez la note que vous souhaitez supprimer dans la section "Mes notes enregistrées".
+2. Cliquez sur le bouton "Supprimer" à côté de cette note.
+3. La note sera définitivement supprimée de la base de données.
 
