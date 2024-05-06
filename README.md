@@ -29,3 +29,7 @@ A note-taking application built using Tauri and Rust. This application allows yo
 2. Install dependencies:
    ```bash
    cargo install tauri-cli
+3. Launch app:
+   ```bash
+   cd notes
+   cargo tauri dev
